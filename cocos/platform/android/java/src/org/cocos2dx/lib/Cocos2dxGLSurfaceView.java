@@ -53,10 +53,10 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
     private static Handler sHandler;
 
     private static Cocos2dxGLSurfaceView mCocos2dxGLSurfaceView;
-    private static Cocos2dxTextInputWraper sCocos2dxTextInputWraper;
+    private static Cocos2dxTextInputWrapper sCocos2dxTextInputWraper;
 
     private Cocos2dxRenderer mCocos2dxRenderer;
-    private Cocos2dxEditText mCocos2dxEditText;
+    private Cocos2dxEditBox mCocos2dxEditText;
 
     public boolean isSoftKeyboardShown() {
         return mSoftKeyboardShown;
@@ -90,7 +90,7 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
         this.setFocusableInTouchMode(true);
 
         Cocos2dxGLSurfaceView.mCocos2dxGLSurfaceView = this;
-        Cocos2dxGLSurfaceView.sCocos2dxTextInputWraper = new Cocos2dxTextInputWraper(this);
+        Cocos2dxGLSurfaceView.sCocos2dxTextInputWraper = new Cocos2dxTextInputWrapper(this);
 
         Cocos2dxGLSurfaceView.sHandler = new Handler() {
             @Override
@@ -116,6 +116,8 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
                             final InputMethodManager imm = (InputMethodManager) Cocos2dxGLSurfaceView.mCocos2dxGLSurfaceView.getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
                             imm.hideSoftInputFromWindow(Cocos2dxGLSurfaceView.this.mCocos2dxEditText.getWindowToken(), 0);
                             Cocos2dxGLSurfaceView.this.requestFocus();
+                            // can take effect after GLSurfaceView has focus
+                            ((Cocos2dxActivity)Cocos2dxGLSurfaceView.mCocos2dxGLSurfaceView.getContext()).hideVirtualButton();
                             Log.d("GLSurfaceView", "HideSoftInput");
                         }
                         break;
@@ -151,15 +153,14 @@ public class Cocos2dxGLSurfaceView extends GLSurfaceView {
         return this.mCocos2dxRenderer.getContentText();
     }
 
-    public Cocos2dxEditText getCocos2dxEditText() {
+    public Cocos2dxEditBox getCocos2dxEditText() {
         return this.mCocos2dxEditText;
     }
 
-    public void setCocos2dxEditText(final Cocos2dxEditText pCocos2dxEditText) {
+    public void setCocos2dxEditText(final Cocos2dxEditBox pCocos2dxEditText) {
         this.mCocos2dxEditText = pCocos2dxEditText;
         if (null != this.mCocos2dxEditText && null != Cocos2dxGLSurfaceView.sCocos2dxTextInputWraper) {
             this.mCocos2dxEditText.setOnEditorActionListener(Cocos2dxGLSurfaceView.sCocos2dxTextInputWraper);
-            this.mCocos2dxEditText.setCocos2dxGLSurfaceView(this);
             this.requestFocus();
         }
     }

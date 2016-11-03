@@ -1,5 +1,5 @@
 /****************************************************************************
-Copyright (c) 2013-2014 Chukong Technologies Inc.
+Copyright (c) 2013-2016 Chukong Technologies Inc.
 
 http://www.cocos2d-x.org
 
@@ -35,6 +35,8 @@ THE SOFTWARE.
 #include "renderer/CCGLProgramState.h"
 #include "renderer/ccShaders.h"
 #include "2d/CCCamera.h"
+#include "2d/CCSprite.h"
+#include "ui/UIScale9Sprite.h"
 
 NS_CC_BEGIN
 
@@ -267,6 +269,7 @@ Widget* Widget::getWidgetParent()
 void Widget::setEnabled(bool enabled)
 {
     _enabled = enabled;
+    setBright(enabled);
 }
 
 void Widget::initRenderer()
@@ -288,6 +291,11 @@ LayoutComponent* Widget::getOrCreateLayoutComponent()
 
 void Widget::setContentSize(const cocos2d::Size &contentSize)
 {
+    Size previousSize = ProtectedNode::getContentSize();
+    if(previousSize.equals(contentSize))
+    {
+        return;
+    }
     ProtectedNode::setContentSize(contentSize);
 
     _customSize = contentSize;
@@ -297,7 +305,7 @@ void Widget::setContentSize(const cocos2d::Size &contentSize)
     }
     else if (_ignoreSize)
     {
-        _contentSize = getVirtualRendererSize();
+        ProtectedNode::setContentSize(getVirtualRendererSize());
     }
     if (!_usingLayoutComponent && _running)
     {
@@ -601,9 +609,14 @@ bool Widget::isHighlighted() const
     return _highlight;
 }
 
-void Widget::setHighlighted(bool hilight)
+void Widget::setHighlighted(bool highlight)
 {
-    _highlight = hilight;
+    if (highlight == _highlight)
+    {
+        return;
+    }
+
+    _highlight = highlight;
     if (_bright)
     {
         if (_highlight)
@@ -766,8 +779,8 @@ bool Widget::onTouchBegan(Touch *touch, Event *unusedEvent)
         auto camera = Camera::getVisitingCamera();
         if(hitTest(_touchBeganPosition, camera, nullptr))
         {
-            _hittedByCamera = camera;
             if (isClippingParentContainsPoint(_touchBeganPosition)) {
+                _hittedByCamera = camera;
                 _hitted = true;
             }
         }
@@ -882,6 +895,12 @@ void Widget::moveEvent()
 void Widget::releaseUpEvent()
 {
     this->retain();
+
+    if (isFocusEnabled())
+    {
+        requestFocus();
+    }
+
     if (_touchEventCallback)
     {
         _touchEventCallback(this, TouchEventType::ENDED);
@@ -944,7 +963,7 @@ bool Widget::hitTest(const Vec2 &pt, const Camera* camera, Vec3 *p) const
 bool Widget::isClippingParentContainsPoint(const Vec2 &pt)
 {
     _affectByClipping = false;
-    Widget* parent = getWidgetParent();
+    Node* parent = getParent();
     Widget* clippingParent = nullptr;
     while (parent)
     {
@@ -958,7 +977,7 @@ bool Widget::isClippingParentContainsPoint(const Vec2 &pt)
                 break;
             }
         }
-        parent = parent->getWidgetParent();
+        parent = parent->getParent();
     }
 
     if (!_affectByClipping)
@@ -970,7 +989,9 @@ bool Widget::isClippingParentContainsPoint(const Vec2 &pt)
     if (clippingParent)
     {
         bool bRet = false;
-        if (clippingParent->hitTest(pt, _hittedByCamera, nullptr))
+        auto camera = Camera::getVisitingCamera();
+        // Camera isn't null means in touch begin process, otherwise use _hittedByCamera instead.
+        if (clippingParent->hitTest(pt, (camera ? camera : _hittedByCamera), nullptr))
         {
             bRet = true;
         }
@@ -1176,17 +1197,19 @@ void Widget::copyClonedWidgetChildren(Widget* model)
     }
 }
 
-GLProgramState* Widget::getNormalGLProgramState()const
+GLProgramState* Widget::getNormalGLProgramState(Texture2D* texture)const
 {
     GLProgramState *glState = nullptr;
-    glState = GLProgramState::getOrCreateWithGLProgramName(GLProgram::SHADER_NAME_POSITION_TEXTURE_COLOR_NO_MVP);
+
+    glState = GLProgramState::getOrCreateWithGLProgramName(GLProgram::SHADER_NAME_POSITION_TEXTURE_COLOR_NO_MVP, texture);
     return glState;
 }
 
-GLProgramState* Widget::getGrayGLProgramState()const
+GLProgramState* Widget::getGrayGLProgramState(Texture2D* texture)const
 {
     GLProgramState *glState = nullptr;
-    glState = GLProgramState::getOrCreateWithGLProgramName(GLProgram::SHADER_NAME_POSITION_GRAYSCALE);
+
+    glState = GLProgramState::getOrCreateWithGLProgramName(GLProgram::SHADER_NAME_POSITION_GRAYSCALE, texture);
     return glState;
 }
 
@@ -1223,6 +1246,8 @@ void Widget::copyProperties(Widget *widget)
     setFlippedY(widget->isFlippedY());
     setColor(widget->getColor());
     setOpacity(widget->getOpacity());
+    setCascadeColorEnabled(widget->isCascadeColorEnabled());
+    setCascadeOpacityEnabled(widget->isCascadeOpacityEnabled());
     _touchEventCallback = widget->_touchEventCallback;
     _touchEventListener = widget->_touchEventListener;
     _touchEventSelector = widget->_touchEventSelector;
@@ -1234,9 +1259,9 @@ void Widget::copyProperties(Widget *widget)
     copySpecialProperties(widget);
 
     Map<int, LayoutParameter*>& layoutParameterDic = widget->_layoutParameterDictionary;
-    for (auto iter = layoutParameterDic.begin(); iter != layoutParameterDic.end(); ++iter)
+    for (auto& iter : layoutParameterDic)
     {
-        setLayoutParameter(iter->second->clone());
+        setLayoutParameter(iter.second->clone());
     }
 }
 
@@ -1291,7 +1316,7 @@ void Widget::copyProperties(Widget *widget)
         float originalScale = Node::getScaleX();
         if (_flippedX)
         {
-            originalScale = originalScale * -1.0;
+            originalScale = originalScale * -1.0f;
         }
         return originalScale;
     }
@@ -1301,7 +1326,7 @@ void Widget::copyProperties(Widget *widget)
         float originalScale = Node::getScaleY();
         if (_flippedY)
         {
-            originalScale = originalScale * -1.0;
+            originalScale = originalScale * -1.0f;
         }
         return originalScale;
     }
@@ -1441,7 +1466,7 @@ void Widget::onFocusChange(Widget* widgetLostFocus, Widget* widgetGetFocus)
     }
 }
 
-Widget* Widget::getCurrentFocusedWidget()const
+Widget* Widget::getCurrentFocusedWidget()
 {
     return _focusedWidget;
 }

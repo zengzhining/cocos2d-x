@@ -21,11 +21,13 @@
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  THE SOFTWARE.
  ****************************************************************************/
+#define LOG_TAG "AudioEngine-Win32"
+
 #include "platform/CCPlatformConfig.h"
 
 #if CC_TARGET_PLATFORM == CC_PLATFORM_WIN32
 
-#include "AudioEngine-win32.h"
+#include "audio/win32/AudioEngine-win32.h"
 
 #ifdef OPENAL_PLAIN_INCLUDES
 #include "alc.h"
@@ -88,7 +90,7 @@ bool AudioEngineImpl::init()
             alGenSources(MAX_AUDIOINSTANCES, _alSources);
             alError = alGetError();
             if(alError != AL_NO_ERROR){
-                log("%s:generating sources fail! error = %x\n", __FUNCTION__, alError);
+                ALOGE("%s:generating sources fail! error = %x\n", __FUNCTION__, alError);
                 break;
             }
             
@@ -120,28 +122,34 @@ AudioCache* AudioEngineImpl::preload(const std::string& filePath, std::function<
             break;
         }
 
-        auto ext = strchr(filePath.c_str(), '.');
         AudioCache::FileFormat fileFormat = AudioCache::FileFormat::UNKNOWN;
 
-        if (_stricmp(ext, ".ogg") == 0){
+        std::string fileExtension = FileUtils::getInstance()->getFileExtension(filePath);
+        if (fileExtension == ".ogg")
+        {
             fileFormat = AudioCache::FileFormat::OGG;
         }
-        else if (_stricmp(ext, ".mp3") == 0){
+        else if (fileExtension == ".mp3")
+        {
             fileFormat = AudioCache::FileFormat::MP3;
 
-            if (MPG123_LAZYINIT){
+            if (MPG123_LAZYINIT)
+            {
                 auto error = mpg123_init();
-                if (error == MPG123_OK){
+                if (error == MPG123_OK)
+                {
                     MPG123_LAZYINIT = false;
                 }
-                else{
-                    log("Basic setup goes wrong: %s", mpg123_plain_strerror(error));
+                else
+                {
+                    ALOGE("Basic setup goes wrong: %s", mpg123_plain_strerror(error));
                     break;
                 }
             }
         }
-        else{
-            log("unsupported media type:%s\n", ext);
+        else
+        {
+            ALOGE("Unsupported media type file: %s\n", filePath.c_str());
             break;
         }
 
@@ -239,7 +247,7 @@ void AudioEngineImpl::setVolume(int audioID,float volume)
         
         auto error = alGetError();
         if (error != AL_NO_ERROR) {
-            log("%s: audio id = %d, error = %x\n", __FUNCTION__,audioID,error);
+            ALOGE("%s: audio id = %d, error = %x\n", __FUNCTION__,audioID,error);
         }
     }
 }
@@ -260,7 +268,7 @@ void AudioEngineImpl::setLoop(int audioID, bool loop)
             
             auto error = alGetError();
             if (error != AL_NO_ERROR) {
-                log("%s: audio id = %d, error = %x\n", __FUNCTION__,audioID,error);
+                ALOGE("%s: audio id = %d, error = %x\n", __FUNCTION__,audioID,error);
             }
         }
     }
@@ -277,7 +285,7 @@ bool AudioEngineImpl::pause(int audioID)
     auto error = alGetError();
     if (error != AL_NO_ERROR) {
         ret = false;
-        log("%s: audio id = %d, error = %x\n", __FUNCTION__,audioID,error);
+        ALOGE("%s: audio id = %d, error = %x\n", __FUNCTION__,audioID,error);
     }
     
     return ret;
@@ -291,7 +299,7 @@ bool AudioEngineImpl::resume(int audioID)
     auto error = alGetError();
     if (error != AL_NO_ERROR) {
         ret = false;
-        log("%s: audio id = %d, error = %x\n", __FUNCTION__,audioID,error);
+        ALOGE("%s: audio id = %d, error = %x\n", __FUNCTION__,audioID,error);
     }
     
     return ret;
@@ -307,7 +315,7 @@ bool AudioEngineImpl::stop(int audioID)
         auto error = alGetError();
         if (error != AL_NO_ERROR) {
             ret = false;
-            log("%s: audio id = %d, error = %x\n", __FUNCTION__,audioID,error);
+            ALOGE("%s: audio id = %d, error = %x\n", __FUNCTION__,audioID,error);
         }
     }
     
@@ -316,6 +324,7 @@ bool AudioEngineImpl::stop(int audioID)
     _alSourceUsed[player._alSource] = false;
     if (player._streamingSource)
     {
+        player._ready = false;
         player.notifyExitThread();
     } 
     else
@@ -340,6 +349,7 @@ void AudioEngineImpl::stopAll()
         auto& player = it->second;
         if (player._streamingSource)
         {
+            player._ready = false;
             player.notifyExitThread();
             ++it;
         }
@@ -372,7 +382,7 @@ float AudioEngineImpl::getCurrentTime(int audioID)
             
             auto error = alGetError();
             if (error != AL_NO_ERROR) {
-                log("%s, audio id:%d,error code:%x", __FUNCTION__,audioID,error);
+                ALOGE("%s, audio id:%d,error code:%x", __FUNCTION__,audioID,error);
             }
         }
     }
@@ -399,7 +409,7 @@ bool AudioEngineImpl::setCurrentTime(int audioID, float time)
             
             auto error = alGetError();
             if (error != AL_NO_ERROR) {
-                log("%s: audio id = %d, error = %x\n", __FUNCTION__,audioID,error);
+                ALOGE("%s: audio id = %d, error = %x\n", __FUNCTION__,audioID,error);
             }
             ret = true;
         }
@@ -451,7 +461,7 @@ void AudioEngineImpl::update(float dt)
         auto& player = it->second;
         alGetSourcei(player._alSource, AL_SOURCE_STATE, &sourceState);
         
-        if (player._readForRemove)
+        if (player._readForRemove && !player._ready)
         {
             it = _audioPlayers.erase(it);
         }
@@ -466,6 +476,7 @@ void AudioEngineImpl::update(float dt)
             
             if (player._streamingSource)
             {
+                player._ready = false;
                 player.notifyExitThread();
                 ++it;
             } 
