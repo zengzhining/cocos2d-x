@@ -49,6 +49,14 @@ function Layer:onTouch(callback, isMultiTouches, swallowTouches)
     return self
 end
 
+function Layer:pauseTouch()
+    self:setTouchEnabled(false)
+end
+
+function Layer:resumeTouch()
+    self:setTouchEnabled(true)
+end
+
 function Layer:removeTouch()
     self:unregisterScriptTouchHandler()
     self:setTouchEnabled(false)
@@ -56,13 +64,36 @@ function Layer:removeTouch()
 end
 
 function Layer:onKeypad(callback)
-    self:registerScriptKeypadHandler(callback)
-    self:setKeyboardEnabled(true)
+    --old
+    -- self:registerScriptKeypadHandler(callback)
+    -- self:setKeyboardEnabled(true)
+
+    --new
+    local keyboardCallback = function ( keyCode, event )
+        local event = { keycode = keyCode, target = event:getCurrentTarget() }
+        return callback(event)
+    end
+
+    local listener = cc.EventListenerKeyboard:create()
+    listener:registerScriptHandler(keyboardCallback, cc.Handler.EVENT_KEYBOARD_PRESSED )
+
+    local eventDispatcher = self:getEventDispatcher()
+    eventDispatcher:addEventListenerWithSceneGraphPriority(listener, self)
     return self
+end
+
+function Layer:pauseKeyPad()
+    self:setKeyboardEnabled(false)
+end
+
+function Layer:resumeKeyPad()
+    self:setKeyboardEnabled(true)
 end
 
 function Layer:removeKeypad()
     self:unregisterScriptKeypadHandler()
+    local eventDispatcher = self:getEventDispatcher()
+    eventDispatcher:removeEventListenersForType( cc.EVENT_KEYBOARD )
     self:setKeyboardEnabled(false)
     return self
 end
@@ -73,8 +104,28 @@ function Layer:onAccelerate(callback)
     return self
 end
 
+function Layer:pauseAccelerate()
+    self:setAccelerometerEnabled(false)
+end
+
+function Layer:resumeAccelerate()
+    self:setAccelerometerEnabled(true)
+end
+
 function Layer:removeAccelerate()
     self:unregisterScriptAccelerateHandler()
     self:setAccelerometerEnabled(false)
     return self
+end
+
+function Layer:pauseAllInput()
+    self:pauseTouch()
+    self:pauseKeyPad()
+    self:pauseAccelerate()
+end
+
+function Layer:resumeAllInput()
+    self:resumeTouch()
+    self:resumeAccelerate()
+    self:resumeKeyPad()
 end

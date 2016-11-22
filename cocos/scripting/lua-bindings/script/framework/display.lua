@@ -236,7 +236,7 @@ function display.newScene(name, params)
     scene.name_ = string.format("%s:%d", name or "<unknown-scene>", sceneIndex)
 
     if params.transition then
-        scene = display.wrapSceneWithTransition(scene, params.transition, params.time, params.more)
+        scene = display.wrapScene(scene, params.transition, params.time, params.more)
     end
 
     return scene
@@ -244,7 +244,6 @@ end
 
 function display.wrapScene(scene, transition, time, more)
     local key = string.upper(tostring(transition))
-
     if key == "RANDOM" then
         local keys = table.keys(display.SCENE_TRANSITIONS)
         key = keys[math.random(1, #keys)]
@@ -279,6 +278,24 @@ end
 
 function display.getRunningScene()
     return director:getRunningScene()
+end
+
+function display.getDefaultCamera()
+    local scene = display.getRunningScene()
+    local camera = scene:getDefaultCamera()
+    return camera
+end
+
+function display.pause()
+    director:pause()
+end
+
+function display.resume()
+    director:resume()
+end
+
+function display.exit()
+    director:endToLua()
 end
 
 function display.newNode()
@@ -366,6 +383,12 @@ function display.newSprite(source, x, y, params)
                     sprite = spriteClass:createWithSpriteFrameName(string.sub(source, 2), params.capInsets)
                 end
                 break
+            end
+
+            --如果帧缓存里面
+            local frame = spriteFrameCache:getSpriteFrame(source)
+            if frame then 
+                sprite = spriteClass:createWithSpriteFrameName(source)
             end
 
             -- create sprite from image file
@@ -537,6 +560,27 @@ end
 function display.removeUnusedSpriteFrames()
     spriteFrameCache:removeUnusedSpriteFrames()
     textureCache:removeUnusedTextures()
+end
+
+function display.newCSNode( name )
+    local node = cc.CSLoader:createNode(name)
+
+    return node
+end
+
+function display.newDrawNode(  )
+    local node = cc.DrawNode:create()
+    return node
+end
+
+function display.newTTF( fontName, fontSize, str )
+    local s = cc.Director:getInstance():getWinSize()
+    local ttfConfig = {}
+    ttfConfig.fontFilePath= fontName or "fonts/arial.ttf"
+    ttfConfig.fontSize= fontSize or 18
+
+    local ttf = cc.Label:createWithTTF(ttfConfig,str, cc.VERTICAL_TEXT_ALIGNMENT_CENTER,s.width)
+    return ttf
 end
 
 return display
