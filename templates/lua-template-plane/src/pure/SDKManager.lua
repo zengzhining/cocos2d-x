@@ -20,7 +20,9 @@ function SDKManager:initAllSDK()
 	sdkbox.PluginReview:init()
 	--video
 	sdkbox.PluginAdColony:init()
-	sdkbox.PluginVungle:init()
+	-- sdkbox.PluginVungle:init()
+
+	sdkbox.PluginChartboost:init()
 
 end
 
@@ -45,9 +47,9 @@ function SDKManager:addEvent()
 	    	end
 	    elseif event == "adViewDidDismissScreen" then
 	        local name = args.name
-	    	if name == SDK_BANNER_NAME then
-	           SDKManager:getInstance():onBannerDismiss()
-	    	elseif name == SDK_FULLAD_NAME then
+	    	-- if name == SDK_BANNER_NAME then
+	           -- SDKManager:getInstance():onBannerDismiss()
+	    	if name == SDK_FULLAD_NAME then
 	           SDKManager:getInstance():onFULLADDismiss()
 	    	end
         end
@@ -65,21 +67,24 @@ function SDKManager:addEvent()
             print("onDisplayAlert")
         elseif "onDeclineToRate" == event then
             print("onDeclineToRate")
+            self:onDeclineToRate()
         elseif "onRate" == event then
             print("onRate")
+            self:onRate()
         elseif "onRemindLater" == event then
             print("onRemindLater")
+            self:onRemindLater()
         end
     end)
 
     --vedio event
     sdkbox.PluginAdColony:setListener(function(args)
-
         if "onAdColonyChange" == args.name then
-        local info = args.info  -- sdkbox::AdColonyAdInfo
-        local available = args.available -- boolean
+		        local info = args.info  -- sdkbox::AdColonyAdInfo
+		        local available = args.available -- boolean
                 dump(info, "onAdColonyChange:")
 		        print("available:", available)
+		        self:onVedioLoaded()
 	    elseif "onAdColonyReward" ==  args.name then
 	        local info = args.info  -- sdkbox::AdColonyAdInfo
 	        local currencyName = args.currencyName -- string
@@ -99,21 +104,92 @@ function SDKManager:addEvent()
 	    end
     end)
 
-	sdkbox.PluginVungle:setListener(function(name, args)
-	    if "onVungleCacheAvailable" == name then
-	        print("onVungleCacheAvailable")
-	    elseif "onVungleStarted" ==  name then
-	        print("onVungleStarted")
-	    elseif "onVungleFinished" ==  name then
-	        print("onVungleFinished")
-	    elseif "onVungleAdViewed" ==  name then
-	        print("onVungleAdViewed:", args)
-	        SDKManager:getInstance():onVedioFinished()
-
-	    elseif "onVungleAdReward" ==  name then
-	        print("onVungleAdReward:", args)
+	--chartboost
+	sdkbox.PluginChartboost:setListener(function(args)
+	    if "onChartboostCached" == args.func then
+	        local name = args.name -- string
+	        print("onChartboostCached")
+	        print("name:", args.name)
+	    elseif "onChartboostShouldDisplay" == args.func then
+	        local name = args.name -- string
+	        print("onChartboostShouldDisplay")
+	        print("name:", args.name)
+	    elseif "onChartboostDisplay" == args.func then
+	        local name = args.name -- string
+	        print("onChartboostDisplay")
+	        print("name:", args.name)
+	    elseif "onChartboostDismiss" == args.func then
+	        local name = args.name -- string
+	        print("onChartboostDismiss")
+	        print("name:", args.name)
+	    elseif "onChartboostClose" == args.func then
+	        local name = args.name -- string
+	        print("onChartboostClose")
+	        print("name:", args.name)
+	        if name == SDK_CHARTBOOST_VEDIO_NAME then
+	        	self:onVedioFinished()
+	        elseif name == SDK_CHARTBOOST_FULL_NAME then
+	        	self:onFULLADDismiss()
+	        end
+	    elseif "onChartboostClick" == args.func then
+	        local name = args.name -- string
+	        print("onChartboostClick")
+	        print("name:", args.name)
+	    elseif "onChartboostReward" == args.func then
+	        local name = args.name -- string
+	        local reward = args.reward -- int
+	        print("onChartboostReward")
+	        print("name:", args.name)
+	        print("reward:", reward)
+	    elseif "onChartboostFailedToLoad" == args.func then
+	        local name = args.name -- string
+	        local e = args.e -- int
+	        print("onChartboostFailedToLoad")
+	        print("name:", args.name)
+	        print("error:", e)
+	    elseif "onChartboostFailToRecordClick" == args.func then
+	        local name = args.name -- string
+	        local e = args.e -- int
+	        print("onChartboostFailToRecordClick")
+	        print("name:", args.name)
+	        print("error:", e)
+	    elseif "onChartboostConfirmation" == args.func then
+	        local name = args.name -- string
+	        print("onChartboostConfirmation")
+	    elseif "onChartboostCompleteStore" == args.func then
+	        local name = args.name -- string
+	        print("onChartboostCompleteStore")
 	    end
 	end)
+
+	-- sdkbox.PluginVungle:setListener(function(name, args)
+	--     if "onVungleCacheAvailable" == name then
+	--         print("onVungleCacheAvailable")
+	--     elseif "onVungleStarted" ==  name then
+	--         print("onVungleStarted")
+	--     elseif "onVungleFinished" ==  name then
+	--         print("onVungleFinished")
+	--     elseif "onVungleAdViewed" ==  name then
+	--         print("onVungleAdViewed:", args)
+	--         SDKManager:getInstance():onVedioFinished()
+
+	--     elseif "onVungleAdReward" ==  name then
+	--         print("onVungleAdReward:", args)
+	--     end
+	-- end)
+
+end
+
+--评论回调
+function SDKManager:onRate()
+
+end
+
+function SDKManager:onRemindLater()
+
+end
+
+function SDKManager:onDeclineToRate()
 
 end
 
@@ -123,7 +199,7 @@ function SDKManager:onBannerLoaded()
 end
 
 function SDKManager:onFULLADLoaded()
-
+	self.fullLoad_ = true
 end
 
 function SDKManager:onBeforeShowBanner()
@@ -139,9 +215,14 @@ function SDKManager:onBannerDismiss()
 end
 
 function SDKManager:onFULLADDismiss()
+	print("onFULLADDismiss~~~~~~~~")
 	if self.fulladDismissCallback_ then 
 		self.fulladDismissCallback_()
 	end
+end
+
+function SDKManager:onVedioLoaded()
+	self.vedioLoad_ = true
 end
 
 function SDKManager:onVedioFinished()
@@ -155,6 +236,9 @@ function SDKManager:initData()
 	self.vedioFinishCallback_ = nil
 	self.lastPlayVedioTime_ = 0
 	self.lastShowFullTime_ = 0
+
+	self.fullLoad_ = false
+	self.vedioLoad_ = false
 end
 
 function SDKManager:setVedioCallback( callback_ )
@@ -175,8 +259,11 @@ function SDKManager:logEvent( key, value )
 end
 
 function SDKManager:cacheADS()
-	sdkbox.PluginAdMob:cache(SDK_BANNER_NAME)
+	-- sdkbox.PluginAdMob:cache(SDK_BANNER_NAME)
 	sdkbox.PluginAdMob:cache(SDK_FULLAD_NAME)
+
+	sdkbox.PluginChartboost:cache(SDK_CHARTBOOST_FULL_NAME)
+	sdkbox.PluginChartboost:cache(SDK_CHARTBOOST_VEDIO_NAME)
 end
 
 --show ads
@@ -236,11 +323,17 @@ function SDKManager:isInFullTime()
 	return false
 end
 
-function SDKManager:showFULLAD()
+function SDKManager:showFULLAD( callback_ )
 	if self:isFULLADAvailable() then
+		self:setFULLADCallback(callback_)
 		self:showAds(0)
 		self.lastShowFullTime_ = os.time()
 	else
+		if callback_ then
+			callback_()
+		else
+			
+		end
 		print("FULLAD is not available")
 	end
 end
@@ -269,34 +362,46 @@ function SDKManager:isCanPlayVedio()
 		return true
 	end
 
-	if sdkbox.PluginVungle:isCacheAvailable() then 
-		return true
-	end
+	-- if sdkbox.PluginVungle:isCacheAvailable() then 
+	-- 	return true
+	-- end
 
 	return false
 end
 
 function SDKManager:showVideo( callback )
-	if not CC_NEED_SDK then return end
+	if not CC_NEED_SDK then 
+		if callback then
+			callback()
+		end
+		return 
+	end
+
 	local status = sdkbox.PluginAdColony:getStatus(SDK_VEDIO_NAME)
-	print("status~~~~~~", status)
+	print("status~~~~", status)
 	--没有就播放全屏
-	if status >= 2 and status <= 3 then
+	if status >= 3 then
 		self:setVedioCallback( callback )
 		sdkbox.PluginAdColony:show(SDK_VEDIO_NAME)
 	else
-		if sdkbox.PluginVungle:isCacheAvailable() then
+		if sdkbox.PluginChartboost:isAvailable(SDK_CHARTBOOST_VEDIO_NAME) then
+			sdkbox.PluginChartboost:show(SDK_CHARTBOOST_VEDIO_NAME)
 			self:setVedioCallback( callback )
-			sdkbox.PluginVungle:show("video")
-		else
-			if self:isFULLADAvailable() then
-				self:setFULLADCallback( callback )
-				self:showFULLAD()
-			else
-				callback()
-				return 
-			end
+			return 
+		elseif sdkbox.PluginChartboost:isAvailable(SDK_CHARTBOOST_FULL_NAME) then
+			self:setFULLADCallback( callback )
+			sdkbox.PluginChartboost:show(SDK_CHARTBOOST_FULL_NAME)
+			return 
 		end
+		
+
+		-- if self:isFULLADAvailable() then
+			self:showFULLAD(callback)
+		-- else
+			-- callback()
+			-- return 
+		-- end
+		-- end
 	end
 
 	self.lastPlayVedioTime_ = os.time()

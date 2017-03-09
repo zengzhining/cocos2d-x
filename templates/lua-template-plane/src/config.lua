@@ -1,8 +1,10 @@
 
 -- 0 - disable debug info, 1 - less debug info, 2 - verbose debug info
-DEBUG = 2
+DEBUG = 1
 
-DESIGN = true
+DESIGN = false
+
+IS_MAC = false
 
 -- use framework, will disable all deprecated API, false - use legacy API
 CC_USE_FRAMEWORK = true
@@ -19,16 +21,18 @@ CC_NEED_SDK = false
 CC_DEBUG_RECT = false
 
 --默认的音效大小
-DEFAULT_SOUND_VOL = 0.5
+DEFAULT_SOUND_VOL = 0.9
 --默认音乐声音大小
-DEFAULT_MUSIC_VOL = 1.0
+DEFAULT_MUSIC_VOL = 1
 
 --最大的敌人配置个数，对应config下的army配置表个数
-MAX_LEVEL = 2
+MAX_LEVEL = 5
 
 SDK_BANNER_NAME = "admob"
-SDK_FULLAD_NAME = "gameover"
+SDK_FULLAD_NAME = "admob"
 SDK_VEDIO_NAME  = "restart"
+SDK_CHARTBOOST_VEDIO_NAME = "vedio"
+SDK_CHARTBOOST_FULL_NAME = "level"
 
 -- for module display
 CC_DESIGN_RESOLUTION = {

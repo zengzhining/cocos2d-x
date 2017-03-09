@@ -12,7 +12,9 @@ local g_lastId = 1
 
 --是否强置加入,后为强制加入的id,可用于编辑
 local FORCE_ADD = true
-local FORCE_ID = 2
+local NEED_LOAD = true
+local LEVEL = 2
+local FORCE_ID = 3
 ---------------------------------------
 
 --------------function----------------
@@ -38,9 +40,7 @@ end
 
 function DesignScene:onCreate()
 	-- body
-	if DEBUG == 2 then 
-		display.loadSpriteFrames("Plane.plist", "Plane.png")
-	end
+	__G__LoadRes()
 	--数据生成
 	-- local tbl = { 
 	-- 	{armyType = 1, posx = 1, posy = 100},
@@ -89,8 +89,8 @@ function DesignScene:onCreate()
 end
 
 function DesignScene:initEdit()
-	local str = string.format("res/config/army%02d.plist", FORCE_ID)
-	if not FORCE_ADD then return end
+	local str = string.format("res/config/level%02d/army%02d.plist",LEVEL, FORCE_ID)
+	if not NEED_LOAD then return end
 	if not gameio.isExist(str) then return end
 
 	local armyData = gameio.getVectorPlistFromFile(str)
@@ -150,17 +150,22 @@ function DesignScene:initControl()
 
 	layer:onKeypad(function ( event )
 		-- body
-		local keycode = event.keycode
-		if keycode == cc.KeyCode.KEY_W then 
-			self:cameraMove(1)
-		elseif keycode == cc.KeyCode.KEY_S then 
-			self:cameraMove(-1)
-		elseif keycode == cc.KeyCode.KEY_Q then 
-			self:save()
-		elseif keycode == cc.KeyCode.KEY_SPACE or keycode == cc.KeyCode.KEY_D then
-			self:changePlaneId()
-		elseif keycode == cc.KeyCode.KEY_DELETE then
-			self:deleteSelectPlane()
+		if event.eventType == "press" then
+			local keycode = event.keycode
+			if keycode == cc.KeyCode.KEY_W then 
+				self:cameraMove(1)
+			elseif keycode == cc.KeyCode.KEY_S then 
+				self:cameraMove(-1)
+			elseif keycode == cc.KeyCode.KEY_Q then 
+				self:save()
+			elseif keycode == cc.KeyCode.KEY_SPACE then
+				self:changePlaneId( 1 )
+			elseif keycode == cc.KeyCode.KEY_D then
+				self:changePlaneId( -1 )
+
+			elseif keycode == cc.KeyCode.KEY_DELETE then
+				self:deleteSelectPlane()
+			end
 		end
 	end)
 end
@@ -173,27 +178,31 @@ function DesignScene:deleteSelectPlane()
 	end
 end
 
-function DesignScene:changePlaneId()
+function DesignScene:changePlaneId( dir )
 	local idTbl = { "#RedPlane.png", "#GreyPlane.png" }
 	if selectPlane then 
 		local id = selectPlane:getId()
-		if id == 1 then 
-			id =  2
-		elseif id == 2 then
-			id = 1
-		end 
-
-		local res = idTbl[id]
-		selectPlane:setSpriteFrame(display.newSpriteFrame(res))
+		id = id + dir > 15 and 1 or id+dir
+		id = id + dir <= 0 and 1 or id
+		-- if id == 1 then 
+		-- 	id =  2
+		-- elseif id == 2 then
+		-- 	id = 1
+		-- end 
+		local str = string.format("#Enemy%02d.png", id)
+		selectPlane:setSpriteFrame(display.newSpriteFrame(str))
 		selectPlane:setId(id)
+		-- selectPlane:setRotation(180)
 		g_lastId = id
+
+		print("id~~~~~", id)
 	end
 end
 
 function DesignScene:createPlane( x,y , id_ )
 	if not id_ then id_ = 1 end
 	local layer = self:getChildByTag(TAG_ARMY_LAYER)
-	local plane = PlaneFactory:getInstance():createPlane(id_)
+	local plane = PlaneFactory:getInstance():createEnemy(id_)
 	plane:pos(x,y)
 	layer:add(plane)
 	table.insert(planeSet, plane)
@@ -212,13 +221,13 @@ function DesignScene:save()
 	dump(tbl)
 
 	if FORCE_ADD then 
-		local str = string.format("res/config/army%02d.plist", FORCE_ID)
+		local str = string.format("res/config/level%02d/army%02d.plist", LEVEL ,FORCE_ID)
 		gameio.writeVectorPlistToFile(tbl, str)
 		return 
 	end
 	--默认自动增加,到后面去
 	for i = 1, 50 do
-		local str = string.format("res/config/army%02d.plist", i)
+		local str = string.format("res/config/level%02d/army%02d.plist", LEVEL, i)
 		if not gameio.isExist(str) then 
 			gameio.writeVectorPlistToFile(tbl, str)
 			break

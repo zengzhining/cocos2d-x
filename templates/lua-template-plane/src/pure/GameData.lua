@@ -4,14 +4,24 @@ local MAX_RANK = 100
 local BG_SPEED = 10
 
 local DEFAULT_ROLE = 1
-local DEFAULT_LEVEL = 2
+local DEFAULT_LEVEL = 1
+
+local DEFAULT_WORLD = 1
+
+local DEFAULT_BOMB = 3 --默认炸弹个数
+local MAX_BOMB = 6
+
+local MAX_WORLD = 5
+
+local KEY_ALL_SCORE = "ALL_SCORE"
 
 function GameData:ctor()
 	self:initData()
 
+	self:load()
 	--因为到读取大量文件
 	--只有进行第一次初始化时候才进行读取配置文件
-	self:loadConfig()
+	-- self:loadConfig()
 end
 
 function GameData:loadConfig()
@@ -30,24 +40,21 @@ function GameData:loadConfig()
 
 	if DEBUG == 2 then 
 		print("armyConfig==============")
-		dump(self.armyConfig_)
+		-- dump(self.armyConfig_)
 	end
 end
 
-function GameData:getArmyConfig( id )
-	if not id then return self.armyConfig_ end
-	if self.armyConfig_ and self.armyConfig_[id] then 
-		return self.armyConfig_[id]
+function GameData:getArmyConfig(world, id )
+	local fileName = string.format("config/level%02d/army%02d.plist",world, id)
+	if gameio.isExist(fileName) then
+		local armyConfig = gameio.getVectorPlistFromFile(fileName)
+		return armyConfig
 	else
-		print("id ~~~", id)
-		error("no army config")
+		error("not File"..fileName)
 	end
 end
 
 function GameData:initData()
-	self.score_ = 0
-	self.rank_ = MAX_RANK
-	self.lastRank_ = MAX_RANK
 	--游戏背景移动速度
 	self.bgSpeed_ = BG_SPEED
 
@@ -56,41 +63,40 @@ function GameData:initData()
 	--角色id
 	self.roleId_ = self.roleId_ or DEFAULT_ROLE
 
-	--排行榜数据
-	self.rankInfo_ = nil
+	--炸弹个数
+	self.bombNum_ = DEFAULT_BOMB
 
 	--敌人配置
 	self.armyConfig_ = self.armyConfig_ or {}
 
 	--关卡数
-	self.level_ = self.level_ or DEFAULT_LEVEL
+	self.level_ = DEFAULT_LEVEL
 
-	self:load()
+	--世界数目
+	self.worldNum_ = DEFAULT_WORLD
+
+	--全局的主角
+	self.role_ = nil
+
+	--游戏一次运行时候的分数
+	self.score_ = 0
+	--游戏获得的总分数
+	self.allScore_ = self.allScore_ or 0
 end
 --读取和存储游戏数据
 function GameData:load()
-    local fileUtils = cc.FileUtils:getInstance()
+    --获得总的分数
+    local allScore = userDefault.getIntegerForKey(KEY_ALL_SCORE, 0)
+    self:setAllScore(allScore) 
+end
+
+function GameData:save()
+	local fileUtils = cc.FileUtils:getInstance()
 	local writePath = fileUtils:getWritablePath()
-	local path = writePath.."score.plist"
-    local data = nil
-    if io.exists(path) then 
-    	data = fileUtils:getValueVectorFromFile(path)
-    else
-		data = fileUtils:getValueVectorFromFile("score.plist")
-	end
-	self.rankInfo_ = data
+	userDefault.setIntegerForKey(KEY_ALL_SCORE, self:getAllScore() )
 end
 
---插入分数
-function GameData:insertRank( pos,score )
-	if pos > 1 and pos < 100 then 
-		for i = 100,pos,-1 do
-			self.rankInfo_[i] = self.rankInfo_[i-1]
-		end
-		self.rankInfo_[pos] = score
-	end
-end
-
+--------------level----------------
 function GameData:resetLevel()
 	self.level_ = 1
 end
@@ -107,22 +113,43 @@ function GameData:getMaxLevel()
 	return MAX_LEVEL
 end
 
---从排行榜中取得分数
-function GameData:getRankFromScore( score )
-	for i = 100 , 1 ,-1 do
-		local hScore = self.rankInfo_[i]
-		if score <= hScore then 
-			return (i+1) 
-		end
-	end
-	return 1
+----------------WORLD-----------------
+function GameData:resetWorld()
+	self.worldNum_ = DEFAULT_WORLD
 end
 
-function GameData:save()
-	local fileUtils = cc.FileUtils:getInstance()
-	local writePath = fileUtils:getWritablePath()
-	fileUtils:writeValueVectorToFile( self.rankInfo_, writePath.."score.plist")
+function GameData:getWorld()
+	return self.worldNum_
 end
+
+function GameData:addWorld(num)
+	self.worldNum_ = self.worldNum_ + 1
+end
+
+function GameData:getMaxWorld()
+	return MAX_WORLD
+end
+
+----------------bomb---------------------------
+function GameData:setBomb(num)
+	self.bombNum_ = num
+end
+
+function GameData:getBomb()
+	return self.bombNum_
+end
+
+function GameData:addBomb(num)
+	local finalBomb = self.bombNum_ + num
+	self.bombNum_ = finalBomb > MAX_BOMB and MAX_BOMB or finalBomb
+end
+
+function GameData:minBomb(num)
+	local finalBomb = self.bombNum_ - num
+	self.bombNum_ = finalBomb >= 0 and finalBomb or 0
+end
+
+----------------bomb---------------------------
 
 function GameData:reset()
 	self:initData()
@@ -134,6 +161,14 @@ end
 
 function GameData:getRoleId()
 	return self.roleId_
+end
+
+function GameData:setRole( role )
+	self.role_ = role
+end
+
+function GameData:getRole()
+	return self.role_
 end
 
 function GameData:setGameSpeed(speed_)
@@ -168,20 +203,17 @@ function GameData:getScore()
 	return self.score_
 end
 
-function GameData:setRank( rank )
-	self.rank_ = rank
+---------all Score
+function GameData:setAllScore( score )
+	self.allScore_ = score
 end
 
-function GameData:getRank()
-	return self.rank_
+function GameData:addAllScore( score )
+	self.allScore_ = self.allScore_ + score
 end
 
-function GameData:getLastRank()
-	return self.lastRank_ 
-end
-
-function GameData:setLastRank( rank )
-	self.lastRank_ = rank
+function GameData:getAllScore()
+	return self.allScore_
 end
 
 -----单例

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+	<dict>
+		<key>id</key>
+		<real>13</real>
+		<key>x</key>
+		<real>292.8125</real>
+		<key>y</key>
+		<real>1413.5078125</real>
+	</dict>
+	<dict>
+		<key>id</key>
+		<real>6</real>
+		<key>x</key>
+		<real>101.24722290039062</real>
+		<key>y</key>
+		<real>2018.015625</real>
+	</dict>
+	<dict>
+		<key>id</key>
+		<real>6</real>
+		<key>x</key>
+		<real>549.239013671875</real>
+		<key>y</key>
+		<real>2017.000244140625</real>
+	</dict>
+</array>
+</plist>

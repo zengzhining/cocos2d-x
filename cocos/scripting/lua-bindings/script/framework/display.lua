@@ -583,4 +583,14 @@ function display.newTTF( fontName, fontSize, str )
     return ttf
 end
 
+function display.newBMF(fontFile, str)
+    local lb = cc.Label:createWithBMFont(fontFile, str)
+    return lb
+end
+
+function display.newRenderTexture(width, height)
+    local rx = cc.RenderTexture:create(width, height)
+    return rx
+end
+
 return display

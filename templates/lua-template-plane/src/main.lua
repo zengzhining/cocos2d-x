@@ -6,6 +6,7 @@ cc.FileUtils:getInstance():addSearchPath("res/")
 require "config"
 require "cocos.init"
 require "pure.init"
+require "app.Data.init"
 require "app.Obj.PlaneFactory"
 
 local function main()
@@ -13,6 +14,11 @@ local function main()
 	if device.platform == "android" or device.platform == "ios" then
 		CC_NEED_SDK = true
 	end
+
+  if device.platform == "mac" then
+    IS_MAC = true
+  end
+
 
    --初始化SDK
    SDKManager:getInstance()

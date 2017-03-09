@@ -1,42 +1,42 @@
 local MainMenu = class("MainMenu", cc.load("mvc").ViewBase)
 
-MainMenu.RESOURCE_FILENAME = "MainMenu.csb"
+MainMenu.RESOURCE_FILENAME = "Layer/MainMenu.csb"
 function MainMenu:onCreate()
+	self:enableNodeEvents()
 	-- body
 	local root = self:getResourceNode()
-
-	self:enableNodeEvents()
-
-	local layer = display.newLayer()
-
-	layer:onTouch(function (event  )
-		--记得去除掉触摸
-		layer:removeTouch()
-		-- self:getApp():enterScene("GameScene")
-		__G__MenuClickSound()
-		__G__MusicFadeOut(self, 1)
-		__G__actDelay(self, function (  )
+	
+	local startBtn = root:getChildByName("Start")
+	startBtn:onClick(function ( sender )
+		local size = startBtn:getSize()
+		Helper.showClickParticle(startBtn, cc.p(size.width * 0.5, size.height * 0.5))
+		__G__actDelay(self,function (  )
+			
 			self:getApp():enterLoading("SelectScene")
 		end, 1)
+	end)
 
-		--展示一个粒子
-		Helper.showClickParticle( layer, cc.p( event.x, event.y ) )
-	end, false, false)
-	self:add(layer,1)
+	local bg = root:getChildByName("bg")
+	bg:setOpacity(0)
 
-	local bg = __G__createBg( "Layer/BackGround.csb" )
-	bg:setSpeed(-5)
-	self:add(bg, -1)
+	
+
 end
 
 function MainMenu:onEnter()
-	math.randomseed(os.time())
+	__G__MainMusic(2)
 	local root = self:getResourceNode()
+	local bg = root:getChildByName("bg")
+	bg:runAction(cc.FadeIn:create(1))
 
-	local hint = root:getChildByName("Hint")
-	Helper.fadeObj(hint)
-	
-	__G__MainMusic(math.random(1,2))
+	local startBtn = root:getChildByName("Start")
+	startBtn:posByX(display.width)
+	startBtn:runAction(cc.Sequence:create(cc.DelayTime:create(0.5),cc.MoveBy:create(0.5,cc.p( -display.width,0 ))))
+
+	__G__actDelay(self,function (  )
+		SDKManager:getInstance():showReview()
+	end,1.0)
+
 end
 
 function MainMenu:onExit(  )

@@ -6,10 +6,10 @@ function floatObject( obj, time )
 		time = 1.0
 	end
 	local a = CCRepeatForever:create(cc.Sequence:create(
-		cc.EaseIn:create( cc.MoveBy:create(time, ccp( 0, 4 )), 1.5),
-		cc.EaseOut:create( cc.MoveBy:create(time, ccp( 0, 4 )), 1.5),
-		cc.EaseIn:create( cc.MoveBy:create(time, ccp( 0, -4 )), 1.5),
-		cc.EaseOut:create( cc.MoveBy:create(time, ccp( 0, -4 )), 1.5)
+		cc.EaseIn:create( cc.MoveBy:create(time, cc.p( 0, 4 )), 1.5),
+		cc.EaseOut:create( cc.MoveBy:create(time, cc.p( 0, 4 )), 1.5),
+		cc.EaseIn:create( cc.MoveBy:create(time, cc.p( 0, -4 )), 1.5),
+		cc.EaseOut:create( cc.MoveBy:create(time, cc.p( 0, -4 )), 1.5)
 		))
 	obj:runAction(a)
 end
@@ -31,10 +31,27 @@ function showParticle( layer, point, fileName )
 	local emitter = particle.createParticle( fileName)
 	emitter:pos(point)
 	layer:add(emitter,999)
+	return emitter
 end
 --显示一个粒子特效
 function showClickParticle( layer, point )
 	showParticle(layer, point, "Particles/LavaFlow.plist")
+end
+
+--显示一个切换特效
+function showChangeParticle(layer, point)
+	showParticle(layer, point, "Particles/change.plist")
+end
+
+--显示一个炸弹特效
+function showBoomParticle(layer)
+	for i = 1, 5 do
+		local point = cc.p(i * display.width/6, 0 )
+		local emitter = showParticle(layer, point, "Particles/boom.plist")
+		local moveUp = cc.EaseIn:create(cc.MoveBy:create(2, cc.p(0, display.height * 1.5) ) , 1.5)
+		local act = cc.Sequence:create(moveUp  ,cc.RemoveSelf:create(true) )
+		emitter:runAction(act)
+	end
 end
 
 

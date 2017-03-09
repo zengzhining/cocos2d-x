@@ -13,9 +13,11 @@
 #include "PluginGoogleAnalyticsLua.hpp"
 #include "PluginAdColonyLua.hpp"
 #include "PluginAdColonyLuaHelper.h"
-#include "PluginVungleLua.hpp"
-#include "PluginVungleLuaHelper.h"
-//#include "PluginGoogleAnalyticsLuaHelper.h"
+#include "PluginChartboostLua.hpp"
+#include "PluginChartboostLuaHelper.h"
+// #include "PluginGoogleAnalyticsLuaHelper.h"
+// #include "PluginVungleLua.hpp"
+// #include "PluginVungleLuaHelper.h"
 #endif
 
 using namespace CocosDenshion;
@@ -78,8 +80,12 @@ bool AppDelegate::applicationDidFinishLaunching()
     register_all_PluginAdColonyLua(L);
     register_all_PluginAdColonyLua_helper(L);
 
-    register_all_PluginVungleLua(LuaEngine::getInstance()->getLuaStack()->getLuaState());
-    register_all_PluginVungleLua_helper(LuaEngine::getInstance()->getLuaStack()->getLuaState());
+    register_all_PluginChartboostLua(LuaEngine::getInstance()->getLuaStack()->getLuaState());
+    register_all_PluginChartboostLua_helper(LuaEngine::getInstance()->getLuaStack()->getLuaState());
+    register_all_PluginReviewLua(LuaEngine::getInstance()->getLuaStack()->getLuaState());
+    register_all_PluginReviewLua_helper(LuaEngine::getInstance()->getLuaStack()->getLuaState());
+    // register_all_PluginVungleLua(LuaEngine::getInstance()->getLuaStack()->getLuaState());
+    // register_all_PluginVungleLua_helper(LuaEngine::getInstance()->getLuaStack()->getLuaState());
 
 #endif
 
